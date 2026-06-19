@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinancePro V2</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins,sans-serif}
+body{background:#0b1220;color:#fff;padding:12px}
+.container{max-width:100%;margin:auto}
+h1{font-size:22px;margin-bottom:12px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card,.box{background:#111827;border:1px solid #1f2937;border-radius:16px;padding:14px}
+.card small{color:#94a3b8}
+.card h3{margin-top:6px;font-size:18px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form input:first-child{grid-column:1/3}
+.form button{grid-column:1/3}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#fff}
+button{padding:12px;border:none;border-radius:10px;background:#10b981;color:white;font-weight:600}
+canvas{max-height:260px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:8px;border-bottom:1px solid #334155;text-align:left}
+@media(min-width:768px){
+body{padding:20px}
+.cards{grid-template-columns:repeat(4,1fr)}
+.form{grid-template-columns:2fr 1fr 1fr auto}
+.form input:first-child,.form button{grid-column:auto}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>💰 FinancePro V2</h1>
+
+<div class="cards">
+<div class="card"><small>Saldo</small><h3 id="saldo">Rp 0</h3></div>
+<div class="card"><small>Pemasukan</small><h3 id="income">Rp 0</h3></div>
+<div class="card"><small>Pengeluaran</small><h3 id="expense">Rp 0</h3></div>
+<div class="card"><small>Tabungan</small><h3 id="saving">Rp 0</h3></div>
+</div>
+
+<div class="box" style="margin-top:12px">
+<div class="form">
+<input id="ket" placeholder="Keterangan transaksi">
+<input id="jumlah" type="number" placeholder="Nominal">
+<select id="jenis">
+<option>Pemasukan</option>
+<option>Pengeluaran</option>
+<option>Tabungan</option>
+</select>
+<button onclick="tambah()">Tambah Transaksi</button>
+</div>
+</div>
+
+<div class="box" style="margin-top:12px">
+<canvas id="chart"></canvas>
+</div>
+
+<div class="box" style="margin-top:12px">
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Nominal</th></tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<script>
+let data=JSON.parse(localStorage.getItem('financeprov2')||'[]');
+let chart;
+
+function rp(n){return 'Rp '+n.toLocaleString('id-ID');}
+
+function tambah(){
+const ket=document.getElementById('ket').value.trim();
+const jumlah=parseInt(document.getElementById('jumlah').value||0);
+const jenis=document.getElementById('jenis').value;
+if(!ket||jumlah<=0)return;
+
+data.push({
+tanggal:new Date().toLocaleDateString('id-ID'),
+ket,jumlah,jenis
+});
+
+localStorage.setItem('financeprov2',JSON.stringify(data));
+document.getElementById('ket').value='';
+document.getElementById('jumlah').value='';
+render();
+}
+
+function render(){
+let income=0,expense=0,saving=0,rows='';
+
+data.forEach(x=>{
+if(x.jenis==='Pemasukan')income+=x.jumlah;
+if(x.jenis==='Pengeluaran')expense+=x.jumlah;
+if(x.jenis==='Tabungan')saving+=x.jumlah;
+
+rows+=`<tr><td>${x.tanggal}</td><td>${x.ket}</td><td>${x.jenis}</td><td>${rp(x.jumlah)}</td></tr>`;
+});
+
+document.getElementById('tbody').innerHTML=rows;
+document.getElementById('income').innerText=rp(income);
+document.getElementById('expense').innerText=rp(expense);
+document.getElementById('saving').innerText=rp(saving);
+document.getElementById('saldo').innerText=rp(income-expense-saving);
+
+if(chart)chart.destroy();
+chart=new Chart(document.getElementById('chart'),{
+type:'doughnut',
+data:{
+labels:['Pemasukan','Pengeluaran','Tabungan'],
+datasets:[{data:[income,expense,saving]}]
+}
+});
+}
+render();
+</script>
+</body>
+</html>
