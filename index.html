@@ -3,152 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finance Manager PRO V3</title>
+<title>Finance Tracker V3</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 <style>
 body {
   font-family: Arial;
   background: #0f172a;
   color: white;
-  text-align: center;
+  padding: 20px;
 }
-
-.container {
-  max-width: 420px;
-  margin: auto;
-}
-
 .card {
   background: #1e293b;
   padding: 15px;
-  border-radius: 12px;
-  margin: 10px 0;
+  margin-bottom: 15px;
+  border-radius: 10px;
 }
-
+input, select, button {
+  margin: 5px 0;
+  padding: 10px;
+  width: 100%;
+  border-radius: 5px;
+  border: none;
+}
 button {
   background: #22c55e;
-  border: none;
-  padding: 10px;
   color: white;
-  border-radius: 8px;
-  width: 100%;
-  margin-top: 10px;
+  cursor: pointer;
 }
-
-.reset {
-  background: #ef4444;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 6px;
-  border: none;
-}
-
-.history {
-  text-align: left;
-  font-size: 14px;
-  max-height: 150px;
-  overflow-y: auto;
-}
+h2,h3 { margin: 5px 0 10px }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
-<h2>💰 Finance Manager PRO V3</h2>
+<h2>💰 Finance Tracker</h2>
 
 <div class="card">
-  <p>Pemasukan (Saldo Pribadi)</p>
-  <input type="number" id="income">
+  <h3>Saldo: Rp <span id="balance">0</span></h3>
 </div>
 
 <div class="card">
-  <p>Tabungan</p>
-  <input type="number" id="saving">
+  <h3>Input Data</h3>
+  <input type="number" id="income" placeholder="Pemasukan">
+  <input type="number" id="saving" placeholder="Tabungan">
+  <input type="number" id="expense" placeholder="Pengeluaran">
+
+  <select id="category">
+    <option value="Makan">Makan</option>
+    <option value="Bensin">Bensin</option>
+    <option value="Belanja">Belanja</option>
+    <option value="Hiburan">Hiburan</option>
+    <option value="Lainnya">Lainnya</option>
+  </select>
+
+  <button onclick="addData()">Tambah</button>
 </div>
 
 <div class="card">
-  <p>Pengeluaran</p>
-  <input type="number" id="expense">
+  <h3>📅 Filter</h3>
+  <input type="date" id="startDate">
+  <input type="date" id="endDate">
+  <button onclick="applyFilter()">Filter</button>
 </div>
-
-<button onclick="addData()">Tambah Data</button>
-<button class="reset" onclick="resetData()">Reset</button>
-
-<canvas id="chart"></canvas>
 
 <div class="card">
-  <h3>📊 Riwayat</h3>
-  <div id="history" class="history"></div>
+  <h3>📊 Grafik Utama</h3>
+  <canvas id="mainChart"></canvas>
 </div>
 
+<div class="card">
+  <h3>📊 Grafik Kategori</h3>
+  <canvas id="categoryChart"></canvas>
+</div>
+
+<div class="card">
+  <h3>📜 Riwayat</h3>
+  <ul id="history"></ul>
 </div>
 
 <script>
-let chart;
-let data = JSON.parse(localStorage.getItem("financeV3")) || [];
-
-function formatRupiah(num) {
-  return "Rp " + num.toLocaleString("id-ID");
-}
+let data = JSON.parse(localStorage.getItem("data")) || [];
+let mainChart, categoryChart;
 
 function save() {
-  localStorage.setItem("financeV3", JSON.stringify(data));
+  localStorage.setItem("data", JSON.stringify(data));
 }
 
-function renderHistory() {
-  let el = document.getElementById("history");
-  el.innerHTML = "";
-  data.slice().reverse().forEach(item => {
-    el.innerHTML += `
-      <div>
-        💰 ${formatRupiah(item.income)} |
-        🏦 ${formatRupiah(item.saving)} |
-        💸 ${formatRupiah(item.expense)}
-      </div>`;
-  });
-}
+function getFilteredData() {
+  let start = document.getElementById("startDate").value;
+  let end = document.getElementById("endDate").value;
 
-function updateChart() {
-  let totalIncome = data.reduce((a,b)=>a+b.income,0);
-  let totalSaving = data.reduce((a,b)=>a+b.saving,0);
-  let totalExpense = data.reduce((a,b)=>a+b.expense,0);
-
-  if (chart) chart.destroy();
-
-  chart = new Chart(document.getElementById('chart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Saldo','Tabungan','Pengeluaran'],
-      datasets: [{
-        data: [totalIncome, totalSaving, totalExpense]
-      }]
-    },
-    options: {
-      plugins: {
-        legend: {
-          labels: { color: "#fff" }
-        },
-        datalabels: {
-          color: "#fff",
-          font: { weight: "bold", size: 14 },
-          formatter: (value, context) => {
-            let total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-            let percent = total ? (value / total * 100).toFixed(1) : 0;
-            return percent + "%";
-          }
-        }
-      }
-    },
-    plugins: [ChartDataLabels]
+  return data.filter(item => {
+    if (start && item.date < start) return false;
+    if (end && item.date > end) return false;
+    return true;
   });
 }
 
@@ -156,27 +107,120 @@ function addData() {
   let income = Number(document.getElementById('income').value) || 0;
   let saving = Number(document.getElementById('saving').value) || 0;
   let expense = Number(document.getElementById('expense').value) || 0;
+  let category = document.getElementById('category').value;
 
-  data.push({ income, saving, expense });
+  let today = new Date().toISOString().split("T")[0];
+
+  data.push({ income, saving, expense, category, date: today });
 
   save();
-  renderHistory();
-  updateChart();
-
-  document.getElementById('income').value = "";
-  document.getElementById('saving').value = "";
-  document.getElementById('expense').value = "";
+  renderAll();
 }
 
-function resetData() {
-  localStorage.removeItem("financeV3");
-  data = [];
-  renderHistory();
-  updateChart();
+function updateBalance() {
+  let filtered = getFilteredData();
+
+  let totalIncome = filtered.reduce((a,b)=>a+b.income,0);
+  let totalSaving = filtered.reduce((a,b)=>a+b.saving,0);
+  let totalExpense = filtered.reduce((a,b)=>a+b.expense,0);
+
+  let balance = totalIncome - totalSaving - totalExpense;
+
+  document.getElementById("balance").innerText =
+    balance.toLocaleString("id-ID");
 }
 
-renderHistory();
-updateChart();
+function updateMainChart() {
+  let filtered = getFilteredData();
+
+  let totalIncome = filtered.reduce((a,b)=>a+b.income,0);
+  let totalSaving = filtered.reduce((a,b)=>a+b.saving,0);
+  let totalExpense = filtered.reduce((a,b)=>a+b.expense,0);
+
+  if (mainChart) mainChart.destroy();
+
+  mainChart = new Chart(document.getElementById("mainChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Pemasukan","Tabungan","Pengeluaran"],
+      datasets: [{
+        data: [totalIncome, totalSaving, totalExpense]
+      }]
+    },
+    options: {
+      plugins: {
+        datalabels: {
+          formatter: (value, ctx) => {
+            let total = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+            let percent = total ? (value/total*100).toFixed(1) : 0;
+            return percent + "%";
+          },
+          color: "#fff"
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
+function updateCategoryChart() {
+  let filtered = getFilteredData();
+
+  let categories = {};
+
+  filtered.forEach(item => {
+    if (!categories[item.category]) categories[item.category] = 0;
+    categories[item.category] += item.expense;
+  });
+
+  if (categoryChart) categoryChart.destroy();
+
+  categoryChart = new Chart(document.getElementById("categoryChart"), {
+    type: "bar",
+    data: {
+      labels: Object.keys(categories),
+      datasets: [{
+        data: Object.values(categories)
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { display:false },
+        datalabels: {
+          color:"#fff",
+          formatter: v => "Rp " + v.toLocaleString("id-ID")
+        }
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+}
+
+function renderHistory() {
+  let filtered = getFilteredData();
+  let list = document.getElementById("history");
+  list.innerHTML = "";
+
+  filtered.reverse().forEach(item => {
+    let li = document.createElement("li");
+    li.innerText =
+      `${item.date} | +${item.income} | -${item.expense} (${item.category})`;
+    list.appendChild(li);
+  });
+}
+
+function applyFilter() {
+  renderAll();
+}
+
+function renderAll() {
+  updateBalance();
+  updateMainChart();
+  updateCategoryChart();
+  renderHistory();
+}
+
+renderAll();
 </script>
 
 </body>
