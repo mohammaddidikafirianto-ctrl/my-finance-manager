@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finance Manager PRO</title>
+<title>Finance Manager PRO V3</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <style>
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #0f172a;
   color: white;
   text-align: center;
@@ -63,11 +63,16 @@ input {
 
 <div class="container">
 
-<h2>💰 Finance Manager PRO</h2>
+<h2>💰 Finance Manager PRO V3</h2>
 
 <div class="card">
-  <p>Pemasukan</p>
+  <p>Pemasukan (Saldo Pribadi)</p>
   <input type="number" id="income">
+</div>
+
+<div class="card">
+  <p>Tabungan</p>
+  <input type="number" id="saving">
 </div>
 
 <div class="card">
@@ -89,38 +94,42 @@ input {
 
 <script>
 let chart;
-let data = JSON.parse(localStorage.getItem("finance")) || [];
+let data = JSON.parse(localStorage.getItem("financeV3")) || [];
 
 function formatRupiah(num) {
   return "Rp " + num.toLocaleString("id-ID");
 }
 
 function save() {
-  localStorage.setItem("finance", JSON.stringify(data));
+  localStorage.setItem("financeV3", JSON.stringify(data));
 }
 
 function renderHistory() {
   let el = document.getElementById("history");
   el.innerHTML = "";
   data.slice().reverse().forEach(item => {
-    el.innerHTML += `<div>+ ${formatRupiah(item.income)} | - ${formatRupiah(item.expense)}</div>`;
+    el.innerHTML += `
+      <div>
+        💰 ${formatRupiah(item.income)} |
+        🏦 ${formatRupiah(item.saving)} |
+        💸 ${formatRupiah(item.expense)}
+      </div>`;
   });
 }
 
 function updateChart() {
   let totalIncome = data.reduce((a,b)=>a+b.income,0);
+  let totalSaving = data.reduce((a,b)=>a+b.saving,0);
   let totalExpense = data.reduce((a,b)=>a+b.expense,0);
-  let saving = totalIncome - totalExpense;
-  if (saving < 0) saving = 0;
 
   if (chart) chart.destroy();
 
   chart = new Chart(document.getElementById('chart'), {
     type: 'doughnut',
     data: {
-      labels: ['Pemasukan','Pengeluaran','Tabungan'],
+      labels: ['Saldo','Tabungan','Pengeluaran'],
       datasets: [{
-        data: [totalIncome, totalExpense, saving]
+        data: [totalIncome, totalSaving, totalExpense]
       }]
     },
     options: {
@@ -145,20 +154,22 @@ function updateChart() {
 
 function addData() {
   let income = Number(document.getElementById('income').value) || 0;
+  let saving = Number(document.getElementById('saving').value) || 0;
   let expense = Number(document.getElementById('expense').value) || 0;
 
-  data.push({ income, expense });
+  data.push({ income, saving, expense });
 
   save();
   renderHistory();
   updateChart();
 
   document.getElementById('income').value = "";
+  document.getElementById('saving').value = "";
   document.getElementById('expense').value = "";
 }
 
 function resetData() {
-  localStorage.removeItem("finance");
+  localStorage.removeItem("financeV3");
   data = [];
   renderHistory();
   updateChart();
