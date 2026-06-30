@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FinancePro V2</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -34,10 +35,15 @@ background:#10b981;color:white;font-weight:600;cursor:pointer
 }
 
 .hapus-btn{
-background:#ef4444;
-padding:6px 10px;
-border-radius:6px;
-font-size:12px;
+background:transparent;
+border:none;
+color:#ef4444;
+font-size:16px;
+cursor:pointer;
+}
+.hapus-btn:hover{
+transform:scale(1.2);
+color:#b91c1c;
 }
 
 canvas{max-height:260px}
@@ -99,76 +105,84 @@ body{padding:20px}
 </table>
 </div>
 </div>
+
 </div>
 
 <script>
-let data=JSON.parse(localStorage.getItem('financeprov2')||'[]');
+let data = JSON.parse(localStorage.getItem('financeprov2') || '[]');
 let chart;
 
-function rp(n){return 'Rp '+n.toLocaleString('id-ID');}
+function rp(n){
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
 
 function tambah(){
-const ket=document.getElementById('ket').value.trim();
-const jumlah=parseInt(document.getElementById('jumlah').value||0);
-const jenis=document.getElementById('jenis').value;
+  const ket = document.getElementById('ket').value.trim();
+  const jumlah = parseInt(document.getElementById('jumlah').value || 0);
+  const jenis = document.getElementById('jenis').value;
 
-if(!ket||jumlah<=0)return;
+  if(!ket || jumlah <= 0) return;
 
-data.push({
-tanggal:new Date().toLocaleDateString('id-ID'),
-ket,jumlah,jenis
-});
+  data.push({
+    tanggal: new Date().toLocaleDateString('id-ID'),
+    ket,
+    jumlah,
+    jenis
+  });
 
-localStorage.setItem('financeprov2',JSON.stringify(data));
+  localStorage.setItem('financeprov2', JSON.stringify(data));
 
-document.getElementById('ket').value='';
-document.getElementById('jumlah').value='';
+  document.getElementById('ket').value = '';
+  document.getElementById('jumlah').value = '';
 
-render();
+  render();
 }
 
 function hapus(index){
-if(confirm('Yakin mau hapus transaksi ini?')){
-data.splice(index,1);
-localStorage.setItem('financeprov2',JSON.stringify(data));
-render();
-}
+  if(confirm('Hapus transaksi ini?')){
+    data.splice(index,1);
+    localStorage.setItem('financeprov2', JSON.stringify(data));
+    render();
+  }
 }
 
 function render(){
-let income=0,expense=0,saving=0,rows='';
+  let income = 0, expense = 0, saving = 0;
+  let rows = '';
 
-data.forEach((x,i)=>{
-if(x.jenis==='Pemasukan')income+=x.jumlah;
-if(x.jenis==='Pengeluaran')expense+=x.jumlah;
-if(x.jenis==='Tabungan')saving+=x.jumlah;
+  data.forEach((x,i)=>{
+    if(x.jenis === 'Pemasukan') income += x.jumlah;
+    if(x.jenis === 'Pengeluaran') expense += x.jumlah;
+    if(x.jenis === 'Tabungan') saving += x.jumlah;
 
-rows+=`
-<tr>
-<td>${x.tanggal}</td>
-<td>${x.ket}</td>
-<td>${x.jenis}</td>
-<td>${rp(x.jumlah)}</td>
-<td><button class="hapus-btn" onclick="hapus(${i})">Hapus</button></td>
-</tr>
-`;
-});
+    rows += `
+    <tr>
+      <td>${x.tanggal}</td>
+      <td>${x.ket}</td>
+      <td>${x.jenis}</td>
+      <td>${rp(x.jumlah)}</td>
+      <td><button class="hapus-btn" onclick="hapus(${i})">❌</button></td>
+    </tr>
+    `;
+  });
 
-document.getElementById('tbody').innerHTML=rows;
-document.getElementById('income').innerText=rp(income);
-document.getElementById('expense').innerText=rp(expense);
-document.getElementById('saving').innerText=rp(saving);
-document.getElementById('saldo').innerText=rp(income-expense-saving);
+  document.getElementById('tbody').innerHTML = rows;
+  document.getElementById('income').innerText = rp(income);
+  document.getElementById('expense').innerText = rp(expense);
+  document.getElementById('saving').innerText = rp(saving);
+  document.getElementById('saldo').innerText = rp(income - expense - saving);
 
-if(chart)chart.destroy();
+  if(chart) chart.destroy();
 
-chart=new Chart(document.getElementById('chart'),{
-type:'doughnut',
-data:{
-labels:['Pemasukan','Pengeluaran','Tabungan'],
-datasets:[{data:[income,expense,saving]}]
-}
-});
+  chart = new Chart(document.getElementById('chart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pemasukan','Pengeluaran','Tabungan'],
+      datasets: [{
+        data: [income, expense, saving]
+      }]
+    }
+  });
 }
 
 render();
